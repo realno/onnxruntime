@@ -23,13 +23,15 @@ namespace onnxruntime {
 
 #define VECTOR_HEAD(x) x.size() > 0 ? &x[0] : NULL
 
+static concurrency::ThreadPool::ThreadEnvironment tp_env;
+
 //parameter is thread pool size
 class MathGemmTest : public testing::TestWithParam<int> {
  protected:
   static concurrency::ThreadPool* CreateThreadPool(int size) {
     if (size == 1)
       return nullptr;
-    return new concurrency::ThreadPool("test", size);
+    return new concurrency::ThreadPool(size, true, tp_env);
   }
   std::unique_ptr<concurrency::ThreadPool> tp{CreateThreadPool(GetParam())};
 };

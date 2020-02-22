@@ -38,7 +38,9 @@ std::unique_ptr<IExecutionProvider> CreateCPUExecutionProvider() {
 
 class ExecutionFrameTest : public ::testing::Test {
  protected:
-  concurrency::ThreadPool tp_{"test", 1};
+  concurrency::ThreadPool::ThreadEnvironment tp_env_;
+  concurrency::ThreadPool tp_;
+  ExecutionFrameTest() : tp_env_(), tp_(2, false, tp_env_) {}
 };
 
 TEST_F(ExecutionFrameTest, TensorAllocationTest) {

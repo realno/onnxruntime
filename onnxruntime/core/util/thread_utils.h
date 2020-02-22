@@ -5,6 +5,7 @@
 namespace onnxruntime {
 namespace concurrency {
 
-std::unique_ptr<ThreadPool> CreateThreadPool(const std::string& name, int thread_pool_size);
+std::unique_ptr<ThreadPool> CreateThreadPool(int thread_pool_size, bool allow_spinning,
+                                                   ThreadPool::ThreadEnvironment& env, EigenAllocator* allocator);
 }  // namespace concurrency
 }  // namespace onnxruntime

@@ -46,7 +46,7 @@ namespace onnxruntime {
 class IExecutionProvider;  // forward decl
 class IOBinding;
 class CustomRegistry;
-class Notification;
+struct Notification;
 
 namespace logging {
 class LoggingManager;
@@ -467,6 +467,7 @@ class InferenceSession {
 
  private:
   // Threadpool for this session
+  concurrency::ThreadPool::ThreadEnvironment te_;
   std::unique_ptr<onnxruntime::concurrency::ThreadPool> thread_pool_;
   std::unique_ptr<onnxruntime::concurrency::ThreadPool> inter_op_thread_pool_;
 

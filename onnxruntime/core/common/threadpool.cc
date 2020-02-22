@@ -13,14 +13,11 @@
 #pragma warning(push)
 #pragma warning(disable : 4267)
 #endif
-#include <unsupported/Eigen/CXX11/src/ThreadPool/Barrier.h>
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #else
 #pragma warning(pop)
 #endif
-
-using Eigen::Barrier;
 
 namespace onnxruntime {
 
@@ -28,7 +25,6 @@ namespace concurrency {
 //
 // ThreadPool
 //
-ThreadPool::ThreadPool(const std::string&, int num_threads) : impl_(num_threads) {}
 
 void ThreadPool::Schedule(std::function<void()> fn) { impl_.Schedule(fn); }
 
