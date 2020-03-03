@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#include "sample.h"
+#include "hashing_vec.h"
 #include "onnx/defs/schema.h"
 
 namespace onnxruntime {
@@ -17,31 +17,40 @@ ONNX_CPU_OPERATOR_TYPED_MS_KERNEL(
                               DataTypeImpl::GetTensorType<int64_t>()})
         .TypeConstraint("T1", DataTypeImpl::GetTensorType<float>()),
     contrib::HashingVectorizer);
-} // namespace contrib
-}  // namespace onnxruntime
 
 HashingVectorizer::HashingVectorizer(const OpKernelInfo& info) : OpKernel(info) {
-    info.GetAttr("n_features", &n_features);
+    Status status = info.GetAttr("n_features", &n_features);
+    status = info.GetAttr("norm", &norm);
+    if (status.IsOK()) {
+        ORT_ENFORCE(norm == "None", "only None is supported for norm");
+    }
+    status = info.GetAttr("alternate_sign", &alternate_sign);
+    if (status.IsOK()) {
+        ORT_ENFORCE(alternate_sign == "False", "only False is supported for alternate_sign");
+    }
 }
 
-Status HashingVectorizer::Compute(OpKernelContext* context) const override {
-    // Very simple implementation assume ngram = (1,1), utf-8 encoding, all lower case and default value for other parameters
-    // unless stated otherwise. 
-    auto X = context->Input<Tensor>(0);
-    auto& dims = X->Shape();
-    auto Y = context->Output(0, dims);
-    auto X_Data = (X->template Data<T>());
-    auto Y_Data = (Y->template MutableData<T>());
+Status HashingVectorizer::Compute(OpKernelContext* context) const {
+    // Very simple implementation assume ngram = (1,1), utf-8 encoding, all lower case 
+    // norm=None, alternate_sign=False and default value for other parameters
+    // unless stated otherwise.
 
-    for (int64_t i = 0, sz = dims.Size(); i < sz; ++i) {
-      *Y_Data++ = *X_Data++;
-    }
+    context->Input<Tensor>(0); 
+    // auto X = context->Input<Tensor>(0);
+    // auto& dims = X->Shape();
+    // auto Y = context->Output(0, dims);
+    //auto X_Data = (X->template Data<T>());
+    //auto Y_Data = (Y->template MutableData<T>());
+
+    // for (int64_t i = 0, sz = dims.Size(); i < sz; ++i) {
+    //   *Y_Data++ = *X_Data++;
+    // }
 
     return Status::OK();
   }
 
 // Cpoied MurmurHash 32 signed to be compatible with sklearn
-void HashingVectorizer::MurmurHash3_x86_32(const void* key, int len, uint32_t seed, void* out) const {
+void HashingVectorizer::MurmurHash3_x86_32(const void* key, int len, uint32_t seed, void* out, bool is_positive) const {
   const uint8_t* data = reinterpret_cast<const uint8_t*>(key);
   const int nblocks = len / 4;
   uint32_t h1 = seed;
@@ -53,14 +62,14 @@ void HashingVectorizer::MurmurHash3_x86_32(const void* key, int len, uint32_t se
   const uint32_t* blocks = reinterpret_cast<const uint32_t*>(data + static_cast<int64_t>(nblocks) * 4);
 
   for (int i = -nblocks; i; i++) {
-    uint32_t k1 = getblock(blocks, i);
+    uint32_t k1 = xgetblock(blocks, i);
 
     k1 *= c1;
-    k1 = ROTL32(k1, 15);
+    k1 = xROTL32(k1, 15);
     k1 *= c2;
 
     h1 ^= k1;
-    h1 = ROTL32(h1, 13);
+    h1 = xROTL32(h1, 13);
     h1 = h1 * 5 + 0xe6546b64;
   }
 
@@ -78,7 +87,7 @@ void HashingVectorizer::MurmurHash3_x86_32(const void* key, int len, uint32_t se
     case 1:
       k1 ^= tail[0];
       k1 *= c1;
-      k1 = ROTL32(k1, 15);
+      k1 = xROTL32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
   };
@@ -87,11 +96,14 @@ void HashingVectorizer::MurmurHash3_x86_32(const void* key, int len, uint32_t se
   // finalization
   h1 ^= len;
 
-  h1 = fmix(h1);
+  h1 = xfmix(h1);
 
-  if (is_positive_) {
+  if (is_positive) {
     *(uint32_t*)out = h1;
   } else {
     *(int32_t*)out = h1;
   }
 }
+
+} // namespace contrib
+}  // namespace onnxruntime
