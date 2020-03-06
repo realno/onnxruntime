@@ -100,10 +100,13 @@ class HashingVectorizer final : public OpKernel {
   ~HashingVectorizer() = default;
   Status Compute(OpKernelContext* context) const override;
  private:
+    template <typename T> Status ComputeImpl(OpKernelContext* ctx, int64_t output_size) const;
   int64_t n_features = 1 << 20;
   std::string alternate_sign = "False";
   std::string norm = "None";
   void MurmurHash3_x86_32(const void* key, int len, uint32_t seed, void* out, bool is_positive) const;
+
+    Status ComputeImpl(OpKernelContext *ctx) const;
 };
 }  // namespace contrib
 }  // namespace onnxruntime
