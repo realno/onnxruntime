@@ -49,3 +49,4 @@ java/bin
 java/.classpath
 java/.project
 java/.settings
+*.out
