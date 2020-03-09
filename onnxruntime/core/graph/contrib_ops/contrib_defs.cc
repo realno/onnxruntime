@@ -1447,6 +1447,71 @@ of [N, 0] then [N, 0].
         updateOutputShape(ctx, 0, output_shape);
       });
 
+  ONNX_CONTRIB_OPERATOR_SCHEMA(HashingVectorizer)
+      .SetDomain(kMSDomain)
+      .SinceVersion(1)
+      .Input(0, "X", "Strings to tokenize", "T")
+      .Output(0, "Y", "Tokenized strings", "T1")
+      .TypeConstraint(
+            "T",
+            {"tensor(string)", "tensor(int32)", "tensor(int64)"},
+            "Input is ether string UTF-8 or int32/int64")
+      .TypeConstraint("T1", {"tensor(float)"}, "1-D tensor of floats")
+      .Attr(
+          "max_gram_length",
+          "Maximum n-gram length. If this value is 3, 3-grams will be used to generate the output.",
+          AttributeProto::INT)
+      .Attr(
+          "min_gram_length",
+          "Minimum n-gram length. If this value is 2 and max_gram_length is 3, output may contain counts of 2-grams and 3-grams.",
+          AttributeProto::INT)
+      .Attr(
+          "max_skip_count",
+          "Maximum number of items (integers/strings) to be skipped when constructing an n-gram from X. "
+          "If max_skip_count=1, min_gram_length=2, max_gram_length=3, this operator may generate 2-grams "
+          "with skip_count=0 and skip_count=1, and 3-grams with skip_count=0 and skip_count=1",
+          AttributeProto::INT)
+      .Attr(
+          "mode",
+          "The weighting criteria. It can be one of \"TF\" (term frequency), "
+          "\"IDF\" (inverse document frequency), and \"TFIDF\" (the combination of TF and IDF)",
+          AttributeProto::STRING)
+      .SetDoc("NO DOC")
+      .TypeAndShapeInferenceFunction([](ONNX_NAMESPACE::InferenceContext& ctx) {
+          auto output_elem_type = ctx.getOutputType(0)->mutable_tensor_type();
+          output_elem_type->set_elem_type(ONNX_NAMESPACE::TensorProto::FLOAT);
+
+          if (hasInputShape(ctx, 0)) {
+            std::vector<int64_t> ngram_indexes;
+            getRepeatedAttribute(ctx, "ngram_indexes", ngram_indexes);
+            if (ngram_indexes.empty() ||
+                !std::all_of(
+                    ngram_indexes.cbegin(),
+                    ngram_indexes.cend(),
+                    [](int64_t i) { return i >= 0; })) {
+              fail_shape_inference(
+                  "ngram_indexes must be non-empty with no negative values");
+            }
+
+            auto greatest_hit =
+                std::max_element(ngram_indexes.cbegin(), ngram_indexes.cend());
+            auto max_last_axis = *greatest_hit + 1;
+
+            ONNX_NAMESPACE::TensorShapeProto output_shape;
+            auto& input_shape = ctx.getInputType(0)->tensor_type().shape();
+            auto dim_size = input_shape.dim_size();
+            if (dim_size == 1) {
+              output_shape.add_dim()->set_dim_value(max_last_axis);
+            } else if (dim_size == 2) {
+              *output_shape.add_dim() = input_shape.dim(0);
+              output_shape.add_dim()->set_dim_value(max_last_axis);
+            } else {
+              fail_shape_inference("Input tensor must have rank 1 or 2");
+            }
+            updateOutputShape(ctx, 0, output_shape);
+          }
+        });
+
   ONNX_CONTRIB_OPERATOR_SCHEMA(MatMulInteger16)
       .SetDomain(kMSDomain)
       .SinceVersion(1)

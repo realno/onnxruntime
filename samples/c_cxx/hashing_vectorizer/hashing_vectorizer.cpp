@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
 #ifdef _WIN32
   const wchar_t* model_path = L"squeezenet.onnx";
 #else
-  const char* model_path = "squeezenet.onnx";
+  const char* model_path = "hashing_vec.onnx";
 #endif
 
   printf("Using Onnxruntime C++ API\n");
