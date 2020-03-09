@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   // using squeezenet version 1.3
   // URL = https://github.com/onnx/models/tree/master/squeezenet
 #ifdef _WIN32
-  const wchar_t* model_path = L"squeezenet.onnx";
+  const wchar_t* model_path = L"hashing_vec.onnx";
 #else
   const char* model_path = "hashing_vec.onnx";
 #endif

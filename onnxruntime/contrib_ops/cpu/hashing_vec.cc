@@ -83,7 +83,7 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
                       "Input shape must have either [C] or [B,C] dimensions with B > 0.");
     }
 
-    float temp_buff[b_dim][n_features] = {};
+    float temp_buff[b_dim][n_features+1] = {};
 
     if (input_shape.Size() != 0) {
         // When this equals 0
