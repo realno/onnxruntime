@@ -1472,10 +1472,10 @@ of [N, 0] then [N, 0].
             auto dim_size = input_shape.dim_size();
             auto n_features = getAttribute(ctx, "n_features", 1048576);
             if (dim_size == 1) {
-              output_shape.add_dim()->set_dim_value(n_features+1);
+              output_shape.add_dim()->set_dim_value(n_features);
             } else if (dim_size == 2) {
               *output_shape.add_dim() = input_shape.dim(0);
-              output_shape.add_dim()->set_dim_value(n_features+1);
+              output_shape.add_dim()->set_dim_value(n_features);
             } else {
               fail_shape_inference("Input tensor must have rank 1 or 2");
             }

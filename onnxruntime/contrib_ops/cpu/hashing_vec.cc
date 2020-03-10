@@ -83,7 +83,7 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
                       "Input shape must have either [C] or [B,C] dimensions with B > 0.");
     }
 
-    float temp_buff[b_dim][n_features+1] = {};
+    float temp_buff[b_dim][n_features] = {};
 
     if (input_shape.Size() != 0) {
         // When this equals 0
@@ -106,8 +106,10 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
             auto const n1_row_end = n1_start + C;
             while (n1_start < n1_row_end) {
                 uint32_t hash;
-                MurmurHash3_x86_32(n1_start, n_features, seed, &hash, true);
-                temp_buff[row_num][hash]++;
+                auto input = reinterpret_cast<const char*>(n1_start);
+                MurmurHash3_x86_32(input, strlen(input), seed, &hash, true);
+                auto index = hash%n_features;
+                temp_buff[row_num][index]++;
                 ++n1_start;
             }
             ++row_num;
@@ -117,22 +119,28 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
 
     std::vector<int64_t> output_dims;
     if (B == 0) {
-        output_dims.push_back(C);
+        output_dims.push_back(n_features);
         B = 1; // For use in the loops below
     } else {
         output_dims.push_back(B);
-        output_dims.push_back(C);
+        output_dims.push_back(n_features);
     }
 
     TensorShape output_shape(output_dims);
-    assert(frequences.size() == static_cast<size_t>(output_shape.Size()));
+    size_t buf_size = sizeof(temp_buff);
+    size_t item_size = -1;
+    if (buf_size > 0) {
+        item_size = sizeof(temp_buff[0][0]);
+    }
+    size_t buf_len = buf_size/item_size;
+    assert(buf_len == static_cast<size_t>(output_shape.Size()));
 
     auto Y = ctx->Output(0, output_shape);
     auto output_data = Y->MutableData<float>();
 
     uint64_t i = 0;
     while (i<b_dim*n_features) {
-        *output_data++ = **(temp_buff+i);
+        output_data[i] = *(*temp_buff+i);
         i++;
     }
 

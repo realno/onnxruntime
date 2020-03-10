@@ -92,21 +92,17 @@ int main(int argc, char* argv[]) {
 
   //*************************************************************************
   // Score the model using sample data, and inspect values
+  //auto allocator = Ort::AllocatorWithDefaultOptions();
+  int64_t input_tensor_size = 1;
+  //const char* input[] = {"This is the first document.", "This document is the second document.", "And this is the third one.", "Is this the first document?"};
+  const char* input[] = {"This is the first document."};
+  std::vector<const char*> output_node_names = {"variable", "p"};
+  Ort::Value input_tensor = Ort::Value::CreateTensor((OrtAllocator*)(allocator), &input_tensor_size, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_STRING);
 
-  size_t input_tensor_size = 224 * 224 * 3;  // simplify ... using known dim values to calculate size
-                                             // use OrtGetTensorShapeElementCount() to get official size!
-
-  std::vector<float> input_tensor_values(input_tensor_size);
-  std::vector<const char*> output_node_names = {"softmaxout_1"};
-
-  // initialize input data with values in [0.0, 1.0]
-  for (unsigned int i = 0; i < input_tensor_size; i++)
-    input_tensor_values[i] = (float)i / (input_tensor_size + 1);
-
-  // create input tensor object from data values
-  auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-  Ort::Value input_tensor = Ort::Value::CreateTensor<float>(memory_info, input_tensor_values.data(), input_tensor_size, input_node_dims.data(), 4);
+  Ort::ThrowOnError(Ort::GetApi().FillStringTensor(input_tensor, input, input_tensor_size));
+  auto shape_info = input_tensor.GetTensorTypeAndShapeInfo();
   assert(input_tensor.IsTensor());
+  printf("Input Tensor is ready.\n");
 
   // score model & input tensor, get back output tensor
   auto output_tensors = session.Run(Ort::RunOptions{nullptr}, input_node_names.data(), &input_tensor, 1, output_node_names.data(), 1);
@@ -114,18 +110,18 @@ int main(int argc, char* argv[]) {
 
   // Get pointer to output tensor float values
   float* floatarr = output_tensors.front().GetTensorMutableData<float>();
-  assert(abs(floatarr[0] - 0.000045) < 1e-6);
+  int result_size = sizeof(floatarr)/sizeof(float);
+  printf("Result size is [%d].\n", result_size);
+  assert(sizeof(floatarr)/sizeof(float) == 2);
 
   // score the model, and print scores for first 5 classes
-  for (int i = 0; i < 5; i++)
-    printf("Score for class [%d] =  %f\n", i, floatarr[i]);
+  for (int i = 0; i < 1000; i++) {
+    auto value = floatarr[i];
+    if (value > 0) {
+      printf("Count for hasing value [%d] =  %f\n", i, value);
+    }
+  }
 
-  // Results should be as below...
-  // Score for class[0] = 0.000045
-  // Score for class[1] = 0.003846
-  // Score for class[2] = 0.000125
-  // Score for class[3] = 0.001180
-  // Score for class[4] = 0.001317
   printf("Done!\n");
   return 0;
 }
