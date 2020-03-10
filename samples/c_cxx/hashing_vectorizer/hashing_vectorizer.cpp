@@ -75,16 +75,6 @@ int main(int argc, char* argv[]) {
       printf("Input %d : dim %d=%jd\n", i, j, input_node_dims[j]);
   }
 
-  // Results should be...
-  // Number of inputs = 1
-  // Input 0 : name = data_0
-  // Input 0 : type = 1
-  // Input 0 : num_dims = 4
-  // Input 0 : dim 0 = 1
-  // Input 0 : dim 1 = 3
-  // Input 0 : dim 2 = 224
-  // Input 0 : dim 3 = 224
-
   //*************************************************************************
   // Similar operations to get output node information.
   // Use OrtSessionGetOutputCount(), OrtSessionGetOutputName()
@@ -94,8 +84,8 @@ int main(int argc, char* argv[]) {
   // Score the model using sample data, and inspect values
   //auto allocator = Ort::AllocatorWithDefaultOptions();
   int64_t input_tensor_size = 1;
-  //const char* input[] = {"This is the first document.", "This document is the second document.", "And this is the third one.", "Is this the first document?"};
-  const char* input[] = {"This is the first document."};
+  const char* input[] = {"This is the first document. This document is the second document. And this is the third one. Is this the first document?"};
+  //const char* input[] = {"This is the first document."};
   std::vector<const char*> output_node_names = {"variable", "p"};
   Ort::Value input_tensor = Ort::Value::CreateTensor((OrtAllocator*)(allocator), &input_tensor_size, 1, ONNX_TENSOR_ELEMENT_DATA_TYPE_STRING);
 

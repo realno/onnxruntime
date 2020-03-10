@@ -106,7 +106,7 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
             auto const n1_row_end = n1_start + C;
             while (n1_start < n1_row_end) {
                 uint32_t hash;
-                auto input = reinterpret_cast<const char*>(n1_start);
+                auto input = reinterpret_cast<const std::string*>(n1_start)->c_str();
                 MurmurHash3_x86_32(input, strlen(input), seed, &hash, true);
                 auto index = hash%n_features;
                 temp_buff[row_num][index]++;
