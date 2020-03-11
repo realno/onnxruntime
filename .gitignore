@@ -50,3 +50,4 @@ java/.classpath
 java/.project
 java/.settings
 *.out
+*.dSYM*
