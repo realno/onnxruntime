@@ -83,7 +83,8 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
                       "Input shape must have either [C] or [B,C] dimensions with B > 0.");
     }
 
-    float temp_buff[b_dim][n_features] = {};
+    float temp_buff[b_dim][n_features];
+    memset(temp_buff, 0, b_dim*n_features*sizeof(float));
 
     if (input_shape.Size() != 0) {
         // When this equals 0
@@ -91,7 +92,7 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
         // (for example for a string containing only stopwords).
         // TfidfVectorizer returns a zero tensor of shape
         // {b_dim, output_size} when b_dim is the number of received observations
-        // and output_size the is the maximum value in ngram_indexes attribute plus 1.
+        // and output_size the is the maximum value in ngram_indexes attribute plus 1.g++
 
         assert((b_dim * C) == total_items);
 
@@ -132,8 +133,8 @@ Status HashingVectorizer::ComputeImpl(OpKernelContext* ctx) const {
     if (buf_size > 0) {
         item_size = sizeof(temp_buff[0][0]);
     }
-    size_t buf_len = buf_size/item_size;
-    assert(buf_len == static_cast<size_t>(output_shape.Size()));
+    //size_t buf_len = buf_size/item_size;
+    //assert(buf_len == static_cast<size_t>(output_shape.Size()));
 
     auto Y = ctx->Output(0, output_shape);
     auto output_data = Y->MutableData<float>();
