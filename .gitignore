@@ -51,4 +51,4 @@ java/.project
 java/.settings
 *.out
 *.dSYM*
-pythonenv3.8/*
+pythonenv3.8/
